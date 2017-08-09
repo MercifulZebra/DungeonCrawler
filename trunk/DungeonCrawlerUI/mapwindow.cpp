@@ -15,6 +15,10 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     log(NULL),
     tileArray(),
     mousePressStartIndex(),
+    currentMouseModifier(NoModifier),
+    currentAction(NoAction),
+    leftMousePressed_flag(false),
+    rightMousePressed_flag(false),
     northingOffset_inch(0.0),
     eastingOffset_inch(0.0),
     inchPerPixel(.5),
@@ -78,36 +82,46 @@ bool MapWindow::initWindow(QString /*config_filename*/, logger::Logger *nLog) {
 
 void MapWindow::mousePressEvent(QMouseEvent *e) {
 
-    if (e->buttons() == Qt::LeftButton) {
-        if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
-
+    if (!leftMousePressed_flag) {
+        if ((e->buttons() & Qt::LeftButton) != 0) {
+            handleMousePressLeft(e);
         }
-        else if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
-
-        }
-        else if (QApplication::keyboardModifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
-
-        }
-        else {
-
-        }
-
-        int adjustedMousePos_x = e->x() - (this->width() / 2);
-        int adjustedMousePos_y = e->y() - (this->height() / 2);
-        mousePressStartIndex.row = getRowAt(adjustedMousePos_y);
-        mousePressStartIndex.col = getColAt(adjustedMousePos_x);
-
-        setSelectedTiles(mousePressStartIndex, mousePressStartIndex);
     }
 
-    previousMouse_pos = e->pos();
+    if (!rightMousePressed_flag) {
+        if ((e->buttons() & Qt::RightButton) != 0) {
+            handleMousePressRight(e);
+        }
+    }
 
+    setDebugLine(5, QString("Modifer %1 Left: %2 Right: %3").arg(currentMouseModifier).arg(leftMousePressed_flag).arg(rightMousePressed_flag));
     update();
 }
 
-void MapWindow::mouseReleaseEvent(QMouseEvent * /*event*/) {
-    previousMouse_pos = QPoint(-1, -1);
-    clearSelectedTiles();
+void MapWindow::mouseReleaseEvent(QMouseEvent *e) {
+    bool cancelAction_flag = false;
+
+    if (leftMousePressed_flag) {
+        if ((e->buttons() & Qt::LeftButton) == 0) {
+            leftMousePressed_flag = false;
+            cancelAction_flag = true;
+        }
+    }
+
+    if (rightMousePressed_flag) {
+        if ((e->buttons() & Qt::RightButton) == 0) {
+            rightMousePressed_flag = false;
+            cancelAction_flag = true;
+        }
+    }
+
+    if (cancelAction_flag) {
+        cancelCurrentAction();
+    }
+
+    setDebugLine(5, QString("Modifer %1 Left: %2 Right: %3").arg(currentMouseModifier).arg(leftMousePressed_flag).arg(rightMousePressed_flag));
+    update();
+
 }
 
 void MapWindow::mouseMoveEvent(QMouseEvent *e) {
@@ -150,6 +164,40 @@ void MapWindow::wheelEvent(QWheelEvent *e) {
     update();
 }
 
+void MapWindow::handleMousePressLeft(QMouseEvent *e) {
+    leftMousePressed_flag = true;
+    setActiveMouseModifiers(e);
+    
+    if (currentTool == ToolTypes::NoTool) {
+        log->warn("MapWindow::handleMousePressLeft: No Tool selected. No action taken.");
+    }
+    else if (currentTool == ToolTypes::SELECT_TOOL){
+        if (currentMouseModifier == ShiftModifier){
+            startSelectBoxAction(e);
+        }
+        else if (currentMouseModifier == CtrlModifier) {
+            startSelectLocalAction(e);
+        }
+        else {
+            startMoveAction(e);
+        }
+    }
+    
+}
+
+void MapWindow::handleMousePressRight(QMouseEvent *e) {
+    rightMousePressed_flag = true;
+    setActiveMouseModifiers(e);
+}
+
+void MapWindow::handleMouseReleaseLeft(QMouseEvent *e) {
+
+}
+
+void MapWindow::handleMouseReleaseRight(QMouseEvent *e) {
+
+}
+
 void MapWindow::handleMouseMove(QMouseEvent *e) {
 
     currentMouse_pos = e->pos();
@@ -175,19 +223,92 @@ void MapWindow::handleMouseMove(QMouseEvent *e) {
 
 }
 
-void MapWindow::handleMoveLocation(QMouseEvent * /*e*/) {
-
-}
-
 void MapWindow::handleRightMouseMove(QMouseEvent * /*e*/) {
 
 }
 
-void MapWindow::handleShiftMouseMove(QMouseEvent * /*e*/) {
+void MapWindow::handleMoveLocation(QMouseEvent * /*e*/) {
 
 }
 
-void MapWindow::handleControlMouseMove(QMouseEvent * /*e*/) {
+void MapWindow::setActiveMouseModifiers(QMouseEvent *e) {
+
+    if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
+        currentMouseModifier = CtrlModifier;
+    }
+    else if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
+        currentMouseModifier = ShiftModifier;
+    }
+    else if (QApplication::keyboardModifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
+        currentMouseModifier = ShiftCtrlModifier;
+    }
+    else {
+        currentMouseModifier = NoModifier;
+    }
+}
+
+void MapWindow::startSelectBoxAction(QMouseEvent *e) {
+
+}
+
+void MapWindow::startSelectLocalAction(QMouseEvent *e) {
+
+}
+
+void MapWindow::startMoveAction(QMouseEvent *e) {
+
+    int adjustedMousePos_x = e->x() - (this->width() / 2);
+    int adjustedMousePos_y = e->y() - (this->height() / 2);
+    mousePressStartIndex.row = getRowAt(adjustedMousePos_y);
+    mousePressStartIndex.col = getColAt(adjustedMousePos_x);
+
+    setSelectedTiles(mousePressStartIndex, mousePressStartIndex);
+}
+
+void MapWindow::startPaintAction(QMouseEvent *e) {
+
+}
+
+void MapWindow::updateSelectBoxAction(QMouseEvent *e) {
+
+}
+
+void MapWindow::updateSelectLocalAction(QMouseEvent *e) {
+
+}
+
+void MapWindow::updateMoveAction(QMouseEvent *e) {
+
+}
+
+void MapWindow::updatePaintAction(QMouseEvent *e) {
+
+}
+
+void MapWindow::cancelCurrentAction() {
+    if (currentAction == SelectBoxAction || currentAction == SelectLocalAction) {
+        cancelSelectAction();
+    }
+    else if (currentAction == MoveAction) {
+        cancelMoveAction();
+    }
+    else if (currentAction == PaintAction) {
+        cancelPaintAction();
+    }
+
+    currentAction = NoAction;
+    currentMouseModifier = NoModifier;
+}
+
+void MapWindow::cancelSelectAction() {
+
+}
+
+void MapWindow::cancelMoveAction() {
+
+}
+
+void MapWindow::cancelPaintAction() {
 
 }
 
@@ -273,7 +394,9 @@ void MapWindow::paintTiles(QPainter *painter) {
 
     QRect viewBounds(QPoint(leftSide_pix, topSide_pix), QPoint(rightSide_pix, botSide_pix));
 
-    painter->setPen(Qt::white);
+    QPen tPen(Qt::white);
+    tPen.setWidth(1);
+    painter->setPen(tPen);
 
     int numCols = tileArray.length();
     int numRows = 0;

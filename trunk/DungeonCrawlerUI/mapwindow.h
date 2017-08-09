@@ -9,12 +9,29 @@
 #include <QBrush>
 
 #include "tileindex.h"
+#include "tooltypes.h"
 
 namespace logger {
 class Logger;
 }
 
 class Tile;
+
+enum ActionModifier {
+    NoModifier,
+    ShiftModifier,
+    CtrlModifier,
+    AltModifier,
+    ShiftCtrlModifier
+};
+
+enum Action {
+    NoAction,
+    MoveAction,
+    SelectBoxAction,
+    SelectLocalAction,
+    PaintAction
+};
 
 class MapWindow : public QOpenGLWidget
 {
@@ -30,14 +47,31 @@ public:
     void mouseMoveEvent(QMouseEvent *e) override;
     void wheelEvent(QWheelEvent *e) override;
 
+    void handleMousePressLeft(QMouseEvent *e);
+    void handleMousePressRight(QMouseEvent *e);
+    void handleMouseReleaseLeft(QMouseEvent *e);
+    void handleMouseReleaseRight(QMouseEvent *e);
+
     void handleMouseMove(QMouseEvent *e);
-    void handleMouseMoveShiftLeft(QMouseEvent *e);
-    void handleMouseMoveCtrlLeft(QMouseEvent *e);
-    void handleMouseMoveMiddle(QMouseEvent *e);
-    void handleMoveLocation(QMouseEvent *e);
     void handleRightMouseMove(QMouseEvent *e);
-    void handleShiftMouseMove(QMouseEvent *e);
-    void handleControlMouseMove(QMouseEvent *e);
+    void handleMoveLocation(QMouseEvent *e);
+
+    void setActiveMouseModifiers(QMouseEvent *e);
+
+    void startSelectBoxAction(QMouseEvent *e);
+    void startSelectLocalAction(QMouseEvent *e);
+    void startMoveAction(QMouseEvent *e);
+    void startPaintAction(QMouseEvent *e);
+
+    void updateSelectBoxAction(QMouseEvent *e);
+    void updateSelectLocalAction(QMouseEvent *e);
+    void updateMoveAction(QMouseEvent *e);
+    void updatePaintAction(QMouseEvent *e);
+
+    void cancelCurrentAction();
+    void cancelSelectAction();
+    void cancelMoveAction();
+    void cancelPaintAction();
 
     //Painting Functions
     void paintEvent(QPaintEvent *e) override;
@@ -89,6 +123,13 @@ private:
 
     QPoint lastMousePosition;
     TileIndex mousePressStartIndex;
+
+    ToolTypes       currentTool;
+    ActionModifier  currentMouseModifier;
+    Action          currentAction;
+
+    bool leftMousePressed_flag;
+    bool rightMousePressed_flag;
 
     //Coordinate System
     double northingOffset_inch;
