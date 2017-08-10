@@ -15,6 +15,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     log(NULL),
     tileArray(),
     mousePressStartIndex(),
+    currentTool(NULL_TOOL),
     currentMouseModifier(NoModifier),
     currentAction(NoAction),
     leftMousePressed_flag(false),
@@ -40,6 +41,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     debugTextPen(),
     debugTextFont()
 {
+    currentTool = MOVE_TOOL;
 }
 
 bool MapWindow::initWindow(QString /*config_filename*/, logger::Logger *nLog) {
@@ -126,18 +128,7 @@ void MapWindow::mouseReleaseEvent(QMouseEvent *e) {
 
 void MapWindow::mouseMoveEvent(QMouseEvent *e) {
 
-
-    if (e->buttons() == Qt::LeftButton) {
-
-    }
-    else if (e->buttons() == Qt::MidButton) {
-
-    }
-    else {
-
-    }
-
-    checkHoveredTile(e->pos());
+    handleMouseMove(e);
 
     previousMouse_pos = e->pos();
     QOpenGLWidget::mouseMoveEvent(e);
@@ -168,8 +159,13 @@ void MapWindow::handleMousePressLeft(QMouseEvent *e) {
     leftMousePressed_flag = true;
     setActiveMouseModifiers(e);
     
-    if (currentTool == ToolTypes::NoTool) {
+    if (currentTool == ToolTypes::NULL_TOOL) {
         log->warn("MapWindow::handleMousePressLeft: No Tool selected. No action taken.");
+    }
+    else if (currentTool == ToolTypes::MOVE_TOOL) {
+        if (currentMouseModifier == NoModifier) {
+            startMoveAction(e);
+        }
     }
     else if (currentTool == ToolTypes::SELECT_TOOL){
         if (currentMouseModifier == ShiftModifier){
@@ -202,24 +198,18 @@ void MapWindow::handleMouseMove(QMouseEvent *e) {
 
     currentMouse_pos = e->pos();
 
-    if (e->buttons() == Qt::LeftButton) {
-
-        TileIndex tIndex;
-        int adjustedMousePos_x = e->x() - (this->width() / 2);
-        int adjustedMousePos_y = e->y() - (this->height() / 2);
-        tIndex.row = getRowAt(adjustedMousePos_y);
-        tIndex.col = getColAt(adjustedMousePos_x);
-
-        if (tIndex.row == -1 || tIndex.col == -1) {
-            log->info(QString("%1 %2").arg(tIndex.row).arg(tIndex.col));
-        }
-        else {
-            setSelectedTiles(mousePressStartIndex, tIndex);
-        }
+    if (currentAction == MoveAction) {
+        updateMoveAction(e);
     }
-
-    northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
-    eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
+    else if (currentAction == SelectBoxAction) {
+        updateSelectBoxAction(e);
+    }
+    else if (currentAction == SelectLocalAction) {
+        updateSelectLocalAction(e);
+    }
+    else if (currentAction == PaintAction) {
+        updatePaintAction(e);
+    }
 
 }
 
@@ -249,14 +239,6 @@ void MapWindow::setActiveMouseModifiers(QMouseEvent *e) {
 
 void MapWindow::startSelectBoxAction(QMouseEvent *e) {
 
-}
-
-void MapWindow::startSelectLocalAction(QMouseEvent *e) {
-
-}
-
-void MapWindow::startMoveAction(QMouseEvent *e) {
-
     int adjustedMousePos_x = e->x() - (this->width() / 2);
     int adjustedMousePos_y = e->y() - (this->height() / 2);
     mousePressStartIndex.row = getRowAt(adjustedMousePos_y);
@@ -265,12 +247,37 @@ void MapWindow::startMoveAction(QMouseEvent *e) {
     setSelectedTiles(mousePressStartIndex, mousePressStartIndex);
 }
 
+void MapWindow::startSelectLocalAction(QMouseEvent *e) {
+
+}
+
+void MapWindow::startMoveAction(QMouseEvent *e) {
+    currentAction = MoveAction;
+}
+
 void MapWindow::startPaintAction(QMouseEvent *e) {
 
 }
 
 void MapWindow::updateSelectBoxAction(QMouseEvent *e) {
+    if (e->buttons() == Qt::LeftButton) {
 
+        TileIndex tIndex;
+        int adjustedMousePos_x = e->x() - (this->width() / 2);
+        int adjustedMousePos_y = e->y() - (this->height() / 2);
+        tIndex.row = getRowAt(adjustedMousePos_y);
+        tIndex.col = getColAt(adjustedMousePos_x);
+
+        if (tIndex.row == -1 || tIndex.col == -1) {
+            log->info(QString("%1 %2").arg(tIndex.row).arg(tIndex.col));
+        }
+        else {
+            setSelectedTiles(mousePressStartIndex, tIndex);
+        }
+    }
+
+    northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
+    eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
 }
 
 void MapWindow::updateSelectLocalAction(QMouseEvent *e) {
@@ -278,7 +285,14 @@ void MapWindow::updateSelectLocalAction(QMouseEvent *e) {
 }
 
 void MapWindow::updateMoveAction(QMouseEvent *e) {
+    int difMousePos_x = e->x() - previousMouse_pos.x();
+    int difMousePos_y = e->y() - previousMouse_pos.y();
 
+    eastingOffset_inch = (eastingOffset_inch - (difMousePos_x * inchPerPixel));
+    northingOffset_inch = (northingOffset_inch - (difMousePos_y * inchPerPixel));
+
+    northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
+    eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
 }
 
 void MapWindow::updatePaintAction(QMouseEvent *e) {
@@ -957,4 +971,23 @@ void MapWindow::setDebugLine(int row, QString text) {
     }
 
     debugLines[debugLines.count() - (row)] = text;
+}
+
+QString MapWindow::actionToString(Action cAction) {
+    QString rString;
+
+    if (cAction == MoveAction) {
+        rString = QString("Move");
+    }
+    else if (cAction == SelectBoxAction) {
+        rString = QString("Select Box");
+    }
+    else if (cAction == SelectLocalAction) {
+        rString = QString("Select Local");
+    }
+    else if (cAction == PaintAction) {
+        rString = QString("Paint");
+    }
+
+    return rString;
 }

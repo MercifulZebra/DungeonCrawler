@@ -2,7 +2,7 @@
 #define TOOLTYPES_H
 
 enum ToolTypes {
- NoTool,
+ NULL_TOOL,
  SELECT_TOOL,
  MOVE_TOOL,
  PAINT_TOOL,
