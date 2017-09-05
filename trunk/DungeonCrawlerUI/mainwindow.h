@@ -7,6 +7,7 @@ namespace logger {
     class Logger;
 }
 
+class ConfigAccessor;
 class HomeScreen;
 class MapView;
 
@@ -37,6 +38,8 @@ private:
     Ui::MainWindow *ui;
 
     logger::Logger      *log;
+    ConfigAccessor      *accessor;
+
     Project             *activeProject;
     QStackedWidget      *mainStack;
 

@@ -7,6 +7,8 @@ namespace logger {
 class Logger;
 }
 
+class ConfigAccessor;
+
 namespace Ui {
 class HomeScreen;
 }
@@ -19,7 +21,7 @@ public:
     explicit HomeScreen(QWidget *parent = 0);
     ~HomeScreen();
 
-    bool init(logger::Logger *nLog);
+    bool init(logger::Logger *nLog, ConfigAccessor *accessor);
     bool initStyle(QPalette p);
 
     void clearNewProject();

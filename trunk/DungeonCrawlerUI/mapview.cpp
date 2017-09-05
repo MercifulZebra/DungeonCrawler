@@ -1,9 +1,11 @@
 #include "mapview.h"
 #include "ui_mapview.h"
 
+#include "configaccessor.h"
 #include "logger.h"
 #include "mapwindow.h"
 
+#include <QFile>
 #include <QGridLayout>
 
 MapView::MapView(QWidget *parent) :
@@ -27,7 +29,7 @@ MapView::~MapView()
     delete ui;
 }
 
-bool MapView::initView(QString config_filename, logger::Logger *nLog) {
+bool MapView::initView(logger::Logger *nLog, ConfigAccessor *accessor) {
 
     bool initSuccess_flag = true;
 
@@ -35,9 +37,35 @@ bool MapView::initView(QString config_filename, logger::Logger *nLog) {
 
     //MapWindow
     log->debug("Starting MapWindow (OpenGL) initialization.");
-    if (!mapWindow->initWindow(config_filename, log)) {
+    if (!mapWindow->initWindow(accessor, log)) {
         log->err("MapWindow failed to initialize successfully.");
+        initSuccess_flag &= false;
     }
+
+    if (!initTopBar(accessor)) {
+        log->err("MapView.TopBar failed ot initialize successfully.");
+        initSuccess_flag &= false;
+    }
+
+
+    if (!initSideBar(accessor)) {
+        log->err("MapView.SideBar failed ot initialize successfully.");
+        initSuccess_flag &= false;
+    }
+    return initSuccess_flag;
+
+}
+
+bool MapView::initTopBar(ConfigAccessor *accessor) {
+    bool initSuccess_flag = true;
+
+
+    return initSuccess_flag;
+}
+
+bool MapView::initSideBar(ConfigAccessor *accessor) {
+    bool initSuccess_flag = true;
+
 
     return initSuccess_flag;
 

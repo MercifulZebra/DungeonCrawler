@@ -1,5 +1,6 @@
 #include "mapwindow.h"
 
+#include "configaccessor.h"
 #include "logger.h"
 #include "tile.h"
 
@@ -44,7 +45,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     currentTool = MOVE_TOOL;
 }
 
-bool MapWindow::initWindow(QString /*config_filename*/, logger::Logger *nLog) {
+bool MapWindow::initWindow(ConfigAccessor *accessor, logger::Logger *nLog) {
     bool initSuccess_flag = true;
 
     log = nLog;
@@ -210,6 +211,9 @@ void MapWindow::handleMouseMove(QMouseEvent *e) {
     else if (currentAction == PaintAction) {
         updatePaintAction(e);
     }
+    else if (currentAction == NoAction) {
+        checkHoveredTile((e->pos()));
+    }
 
 }
 
@@ -293,6 +297,8 @@ void MapWindow::updateMoveAction(QMouseEvent *e) {
 
     northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
     eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
+
+    checkHoveredTile(e->pos());
 }
 
 void MapWindow::updatePaintAction(QMouseEvent *e) {

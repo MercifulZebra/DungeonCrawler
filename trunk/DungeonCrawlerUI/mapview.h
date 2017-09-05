@@ -11,6 +11,8 @@ namespace logger {
 class Logger;
 }
 
+class ConfigAccessor;
+
 class MapWindow;
 
 class QGridLayout;
@@ -23,7 +25,9 @@ public:
     explicit MapView(QWidget *parent = 0);
     ~MapView();
 
-    bool initView(QString config_filename, logger::Logger *nLog);
+    bool initView(logger::Logger *nLog, ConfigAccessor *accessor);
+    bool initTopBar(ConfigAccessor *accessor);
+    bool initSideBar(ConfigAccessor *accessor);
 
 private:
     Ui::MapView     *ui;

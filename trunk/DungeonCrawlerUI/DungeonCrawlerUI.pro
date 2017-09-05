@@ -24,7 +24,8 @@ SOURCES += main.cpp\
     mapwindow.cpp \
     tileset.cpp \
     tileimage.cpp \
-    tileindex.cpp
+    tileindex.cpp \
+    configaccessor.cpp
 
 HEADERS  += mainwindow.h \
     project.h \
@@ -38,7 +39,8 @@ HEADERS  += mainwindow.h \
     tooltypes.h \
     tileset.h \
     tileimage.h \
-    tileindex.h
+    tileindex.h \
+    configaccessor.h
 
 FORMS    += mainwindow.ui \
     homescreen.ui \

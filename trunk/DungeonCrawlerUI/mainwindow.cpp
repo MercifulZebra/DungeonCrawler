@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "configaccessor.h"
 #include "logger.h"
 
 //Screen
@@ -19,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     log(NULL),
+    accessor(NULL),
     activeProject(NULL),
     mainStack(NULL),
     homeScreen(NULL),
@@ -52,27 +54,35 @@ bool MainWindow::init(QString config_filename) {
         mainStack = new QStackedWidget(this);
         setCentralWidget(mainStack);
 
-
-        log->debug("Starting HomeScreen Initialization.");
-        homeScreen = new HomeScreen(this);
-        if (!homeScreen->init(log)) {
+        log->debug("Initialize Configuration Accessor.");
+        accessor = new ConfigAccessor(this);
+        if (!accessor->loadConfig(config_filename)) {
+            log->err("Failed to load configuration file. Exiting initialization.");
             initSuccess_flag = false;
         }
 
-        log->debug("Starting MapView Initialization.");
-        mapView = new MapView(this);
-        mapView->initView(config_filename, log);
-
-        log->debug("Starting Style initialization.");
-        updateStyle();
-
         if (initSuccess_flag) {
-            homeScreen->prepareHomeScreen();
+            log->debug("Starting HomeScreen Initialization.");
+            homeScreen = new HomeScreen(this);
+            if (!homeScreen->init(log, accessor)) {
+                initSuccess_flag = false;
+            }
 
-            homeScreen_index = mainStack->addWidget(homeScreen);
-            mapScreen_index = mainStack->addWidget(mapView);
+            log->debug("Starting MapView Initialization.");
+            mapView = new MapView(this);
+            mapView->initView(log, accessor);
 
-            mainStack->setCurrentIndex(mapScreen_index);
+            log->debug("Starting Style initialization.");
+            updateStyle();
+
+            if (initSuccess_flag) {
+                homeScreen->prepareHomeScreen();
+
+                homeScreen_index = mainStack->addWidget(homeScreen);
+                mapScreen_index = mainStack->addWidget(mapView);
+
+                mainStack->setCurrentIndex(mapScreen_index);
+            }
         }
     }
     else {

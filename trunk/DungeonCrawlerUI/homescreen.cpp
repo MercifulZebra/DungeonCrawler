@@ -1,6 +1,7 @@
 #include "homescreen.h"
 #include "ui_homescreen.h"
 
+#include "configaccessor.h"
 #include "logger.h"
 #include "flatbutton.h"
 
@@ -20,7 +21,7 @@ HomeScreen::~HomeScreen()
     delete ui;
 }
 
-bool HomeScreen::init(logger::Logger *nLog) {
+bool HomeScreen::init(logger::Logger *nLog, ConfigAccessor *accessor) {
     bool initSuccess_flag = true;
 
     log = nLog;

@@ -15,6 +15,8 @@ namespace logger {
 class Logger;
 }
 
+class ConfigAccessor;
+
 class Tile;
 
 enum ActionModifier {
@@ -39,7 +41,7 @@ class MapWindow : public QOpenGLWidget
 public:
     explicit MapWindow(QWidget *parent = 0);
 
-    bool initWindow(QString config_filename, logger::Logger *nLog);
+    bool initWindow(ConfigAccessor *accessor, logger::Logger *nLog);
 
     //Interaction Functions
     void mousePressEvent(QMouseEvent *e) override;
@@ -72,6 +74,9 @@ public:
     void cancelSelectAction();
     void cancelMoveAction();
     void cancelPaintAction();
+
+    //Interaction Functions
+    void setCurrentTool(ToolTypes type);
 
     //Painting Functions
     void paintEvent(QPaintEvent *e) override;
