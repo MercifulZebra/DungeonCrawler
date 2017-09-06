@@ -38,8 +38,6 @@ bool HomeScreen::initStyle(QPalette p) {
     ui->openBrowseButton->setStandardColor(p.alternateBase().color());
     ui->openBrowseButton->setHoverColor(p.base().color());
 
-    qDebug()<< ui->openBrowseButton->styleSheet();
-
     return styleSuccess_flag;
 }
 

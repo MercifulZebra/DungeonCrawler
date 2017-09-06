@@ -148,3 +148,11 @@ QString MainWindow::getLog(){
 
     return rString;
 }
+
+void MainWindow::keyPressEvent(QKeyEvent *event) {
+
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *event) {
+
+}

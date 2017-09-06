@@ -42,7 +42,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     debugTextPen(),
     debugTextFont()
 {
-    currentTool = MOVE_TOOL;
+
 }
 
 bool MapWindow::initWindow(ConfigAccessor *accessor, logger::Logger *nLog) {
@@ -215,6 +215,8 @@ void MapWindow::handleMouseMove(QMouseEvent *e) {
         checkHoveredTile((e->pos()));
     }
 
+    setDebugLine(6, QString("Tool: %1").arg(toolToString(currentTool)));
+
 }
 
 void MapWindow::handleRightMouseMove(QMouseEvent * /*e*/) {
@@ -330,6 +332,11 @@ void MapWindow::cancelMoveAction() {
 
 void MapWindow::cancelPaintAction() {
 
+}
+
+void MapWindow::setCurrentTool(ToolTypes type) {
+    currentTool = type;
+    setDebugLine(6, QString("Tool: %1").arg(toolToString(currentTool)));
 }
 
 void MapWindow::paintEvent(QPaintEvent *e) {
@@ -993,6 +1000,25 @@ QString MapWindow::actionToString(Action cAction) {
     }
     else if (cAction == PaintAction) {
         rString = QString("Paint");
+    }
+
+    return rString;
+}
+
+QString MapWindow::toolToString(ToolTypes type) {
+    QString rString;
+
+    if (type == MOVE_TOOL) {
+        rString = QString("Move Tool");
+    }
+    else if (type == SELECT_TOOL) {
+        rString = QString("Select Tool");
+    }
+    else if (type == PAINT_TOOL) {
+        rString = QString("Paint Tool");
+    }
+    else {
+        rString = QString("No Tool");
     }
 
     return rString;

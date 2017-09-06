@@ -114,6 +114,7 @@ public:
     // Debugging
     void setDebugLine(int row, QString text);
     QString actionToString(Action cAction);
+    QString toolToString(ToolTypes type);
 
 private:
     bool setDimensions(int nRows, int nCols);

@@ -1,6 +1,9 @@
 #include "configaccessor.h"
 
-ConfigAccessor::ConfigAccessor(QObject *parent) : QObject(parent)
+ConfigAccessor::ConfigAccessor(QObject *parent) : QObject(parent),
+    moveToolImage_string("../DungeonCrawlerUI/pointer.png"),
+    selectToolImage_string("../DungeonCrawlerUI/select.png"),
+    paintToolImage_string("../DungeonCrawlerUI/paint.png")
 {
 
 }

@@ -12,6 +12,9 @@ public:
     void clear();
     bool loadConfig(QString config_filename);
 
+    QString moveToolImage_string;
+    QString selectToolImage_string;
+    QString paintToolImage_string;
 signals:
 
 public slots:
