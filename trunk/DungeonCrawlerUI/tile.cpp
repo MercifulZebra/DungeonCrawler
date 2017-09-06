@@ -1,6 +1,8 @@
 #include "tile.h"
 
+#include <QDebug>
 #include <QPainter>
+
 
 Tile::Tile(QObject *parent) : QObject(parent),
     log(NULL),
@@ -21,7 +23,7 @@ bool Tile::init(logger::Logger *nLog) {
     return initSuccess_flag;
 }
 
-void Tile::paintThis(QPainter *painter) {
+void Tile::paintThis(QPainter *painter, int hNeighbors) {
     painter->save();
 
     QBrush rBrush = painter->brush();
@@ -37,9 +39,26 @@ void Tile::paintThis(QPainter *painter) {
     if (isSelected()) {
         QPen sPen;
         sPen.setWidth(10);
-        sPen.setColor(Qt::yellow);
+        sPen.setColor(QColor(255, 255, 0, 140));
         painter->setPen(sPen);
-        painter->drawRect(boundingBox);
+
+        if (!(hNeighbors & TOP)) {
+            painter->drawLine(QPoint(boundingBox.left(), boundingBox.top()), QPoint(boundingBox.right(), boundingBox.top()));
+        }
+
+        if (!(hNeighbors & BOT)) {
+            painter->drawLine(QPoint(boundingBox.left(), boundingBox.bottom()), QPoint(boundingBox.right(), boundingBox.bottom()));
+        }
+
+        if (!(hNeighbors & RIGHT)) {
+            painter->drawLine(QPoint(boundingBox.right(), boundingBox.top()), QPoint(boundingBox.right(), boundingBox.bottom()));
+        }
+
+        if (!(hNeighbors & LEFT)) {
+            painter->drawLine(QPoint(boundingBox.left(), boundingBox.top()), QPoint(boundingBox.left(), boundingBox.bottom()));
+        }
+
+        //painter->drawRect(boundingBox);
     }
 
     painter->setBrush(rBrush);

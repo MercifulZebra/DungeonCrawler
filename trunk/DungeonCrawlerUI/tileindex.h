@@ -4,7 +4,10 @@
 class TileIndex
 {
 public:
-    explicit TileIndex();
+    explicit TileIndex(int row = 0, int col = 0);
+
+    bool operator==(const TileIndex& t);
+    bool operator!=(const TileIndex& t);
 
     int row;
     int col;

@@ -20,6 +20,18 @@ namespace logger {
 //Straight Tunnel
 //Corner Tunnel
 
+enum NeighborPosition {
+    NONE        = 0x00,
+    TOP         = 0x01,
+    TOP_RIGHT   = 0x02,
+    RIGHT       = 0x04,
+    BOT_RIGHT   = 0x08,
+    BOT         = 0x10,
+    BOT_LEFT    = 0x20,
+    LEFT        = 0x40,
+    TOP_LEFT    = 0x80
+};
+
 class QPainter;
 
 class TileSet;
@@ -33,7 +45,7 @@ public:
 
     bool init(logger::Logger *nLog);
 
-    void paintThis(QPainter *painter);
+    void paintThis(QPainter *painter, int hNeighbors);
 
     //Access Functions
     bool contains(int x_pix, int y_pix);

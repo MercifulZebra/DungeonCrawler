@@ -8,6 +8,7 @@
 #include <QPen>
 #include <QBrush>
 
+#include "tile.h"
 #include "tileindex.h"
 #include "tooltypes.h"
 
@@ -16,8 +17,6 @@ class Logger;
 }
 
 class ConfigAccessor;
-
-class Tile;
 
 enum ActionModifier {
     NoModifier,
@@ -111,6 +110,8 @@ public:
     int getRowAt(int y_pix);
     int getColAt(int x_pix);
 
+    int getHighlightedNeighbors(int rowIndex, int columnIndex);
+
     // Debugging
     void setDebugLine(int row, QString text);
     QString actionToString(Action cAction);
@@ -137,6 +138,11 @@ private:
 
     bool leftMousePressed_flag;
     bool rightMousePressed_flag;
+
+    //Select
+    TileIndex prevStartSelectIndex;
+    TileIndex prevEndSelectIndex;
+
 
     //Coordinate System
     double northingOffset_inch;

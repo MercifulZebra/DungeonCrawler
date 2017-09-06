@@ -15,12 +15,14 @@
 MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     log(NULL),
     tileArray(),
-    mousePressStartIndex(),
+    mousePressStartIndex(-3, -3),
     currentTool(NULL_TOOL),
     currentMouseModifier(NoModifier),
     currentAction(NoAction),
     leftMousePressed_flag(false),
     rightMousePressed_flag(false),
+    prevStartSelectIndex(-3, -3),
+    prevEndSelectIndex(-3, -3),
     northingOffset_inch(0.0),
     eastingOffset_inch(0.0),
     inchPerPixel(.5),
@@ -97,7 +99,6 @@ void MapWindow::mousePressEvent(QMouseEvent *e) {
         }
     }
 
-    setDebugLine(5, QString("Modifer %1 Left: %2 Right: %3").arg(currentMouseModifier).arg(leftMousePressed_flag).arg(rightMousePressed_flag));
     update();
 }
 
@@ -106,14 +107,14 @@ void MapWindow::mouseReleaseEvent(QMouseEvent *e) {
 
     if (leftMousePressed_flag) {
         if ((e->buttons() & Qt::LeftButton) == 0) {
-            leftMousePressed_flag = false;
+            handleMouseReleaseLeft(e);
             cancelAction_flag = true;
         }
     }
 
     if (rightMousePressed_flag) {
         if ((e->buttons() & Qt::RightButton) == 0) {
-            rightMousePressed_flag = false;
+            handleMouseReleaseRight(e);
             cancelAction_flag = true;
         }
     }
@@ -122,7 +123,6 @@ void MapWindow::mouseReleaseEvent(QMouseEvent *e) {
         cancelCurrentAction();
     }
 
-    setDebugLine(5, QString("Modifer %1 Left: %2 Right: %3").arg(currentMouseModifier).arg(leftMousePressed_flag).arg(rightMousePressed_flag));
     update();
 
 }
@@ -189,10 +189,15 @@ void MapWindow::handleMousePressRight(QMouseEvent *e) {
 
 void MapWindow::handleMouseReleaseLeft(QMouseEvent *e) {
 
+    leftMousePressed_flag = false;
 }
 
 void MapWindow::handleMouseReleaseRight(QMouseEvent *e) {
+    rightMousePressed_flag = false;
 
+    if (currentTool == SELECT_TOOL || currentTool == SELECT_TOOL) {
+        clearSelectedTiles();
+    }
 }
 
 void MapWindow::handleMouseMove(QMouseEvent *e) {
@@ -245,6 +250,8 @@ void MapWindow::setActiveMouseModifiers(QMouseEvent *e) {
 
 void MapWindow::startSelectBoxAction(QMouseEvent *e) {
 
+    currentAction = SelectBoxAction;
+
     int adjustedMousePos_x = e->x() - (this->width() / 2);
     int adjustedMousePos_y = e->y() - (this->height() / 2);
     mousePressStartIndex.row = getRowAt(adjustedMousePos_y);
@@ -255,6 +262,7 @@ void MapWindow::startSelectBoxAction(QMouseEvent *e) {
 
 void MapWindow::startSelectLocalAction(QMouseEvent *e) {
 
+    currentAction = SelectLocalAction;
 }
 
 void MapWindow::startMoveAction(QMouseEvent *e) {
@@ -262,10 +270,11 @@ void MapWindow::startMoveAction(QMouseEvent *e) {
 }
 
 void MapWindow::startPaintAction(QMouseEvent *e) {
-
+    currentAction = PaintAction;
 }
 
 void MapWindow::updateSelectBoxAction(QMouseEvent *e) {
+    static int i = 0;
     if (e->buttons() == Qt::LeftButton) {
 
         TileIndex tIndex;
@@ -274,16 +283,20 @@ void MapWindow::updateSelectBoxAction(QMouseEvent *e) {
         tIndex.row = getRowAt(adjustedMousePos_y);
         tIndex.col = getColAt(adjustedMousePos_x);
 
-        if (tIndex.row == -1 || tIndex.col == -1) {
-            log->info(QString("%1 %2").arg(tIndex.row).arg(tIndex.col));
-        }
-        else {
+        if ((prevStartSelectIndex != mousePressStartIndex) || (prevEndSelectIndex != tIndex)) {
             setSelectedTiles(mousePressStartIndex, tIndex);
         }
+
+        prevStartSelectIndex = mousePressStartIndex;
+        prevEndSelectIndex = tIndex;
     }
 
-    northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
-    eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
+    //northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
+    //eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
+
+    setDebugLine(5, QString("Num Selected: %1").arg(selectedTiles.count()));
+    checkHoveredTile(previousMouse_pos);
+
 }
 
 void MapWindow::updateSelectLocalAction(QMouseEvent *e) {
@@ -435,7 +448,11 @@ void MapWindow::paintTiles(QPainter *painter) {
         for (int j = 0; j < numRows; j++) {
 
             if (boxWithinView(tileArray.at(i).at(j)->getBoundingBox(), viewBounds)) {
-                tileArray.at(i).at(j)->paintThis(painter);
+                int highlightedNeighbors = NONE;
+                if (tileArray.at(i).at(j)->isSelected()) {
+                    highlightedNeighbors = getHighlightedNeighbors(j, i);
+                }
+                tileArray.at(i).at(j)->paintThis(painter, highlightedNeighbors);
             }
         }
     }
@@ -570,24 +587,6 @@ void MapWindow::checkHoveredTile(QPoint position) {
         if (hoveredTile != NULL) {
             hoveredTile->setHovered(true);
         }
-//        for (int i = 0; i < tileArray.length() && !accepted_flag; i++) {
-//            if (!tileArray.at(i).isEmpty()) {
-
-//                int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
-//                int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
-
-//                if ((adjustedMousePos_x > leftBound) && (adjustedMousePos_x <= rightBound) ) {
-//                    for (int j = 0; j < tileArray.at(i).length() && !accepted_flag; j++) {
-//                        Tile *cTile = tileArray.at(i).at(j);
-//                        if (cTile->contains(adjustedMousePos_x, adjustedMousePos_y)) {
-//                            hoveredTile = cTile;
-//                            hoveredTile->setHovered(true);
-//                            accepted_flag = true;
-//                        }
-//                    }
-//                }
-//            }
-//        }
     }
 }
 
@@ -619,30 +618,50 @@ QVector<Tile*> MapWindow::getTilesInArea(TileIndex startIndex, TileIndex endInde
 
     QVector<Tile*> rTiles;
 
-    if (startIndex.row > endIndex.row) {
-        lowestRow = endIndex.row;
-    }
-    else {
-        highestRow = endIndex.row;
-    }
+    if (tileArray.count() > 0) {
 
-    if (startIndex.col > endIndex.col) {
-        lowestCol = endIndex.col;
-    }
-    else {
-        highestCol = endIndex.col;
-    }
+        if (startIndex.row > endIndex.row) {
+            lowestRow = endIndex.row;
+        }
+        else {
+            highestRow = endIndex.row;
+        }
 
-    if (tileArray.count() >= highestCol) {
-        for (int i = lowestCol; i < highestCol; i++) {
-            if (tileArray.at(i).count() > highestRow) {
-                for (int j = lowestRow; j < highestRow; j++) {
-                    rTiles.append(tileArray.at(i).at(j));
+        if (startIndex.col > endIndex.col) {
+            lowestCol = endIndex.col;
+        }
+        else {
+            highestCol = endIndex.col;
+        }
+
+        if (lowestRow == -1) {
+            lowestRow = 0;
+        }
+        else if (lowestRow == -2) {
+            lowestRow = highestRow;
+            highestRow = tileArray.at(0).count() - 1;
+        }
+
+        if (lowestCol == -1) {
+            lowestCol = 0;
+        }
+        else if (lowestCol == -2) {
+            lowestCol = highestCol;
+            highestCol = tileArray.count() - 1;
+        }
+
+        if ((highestCol >= 0) && (highestRow >= 0) && (lowestRow >= 0) && (lowestCol >= 0)) {
+            if (tileArray.count() >= highestCol) {
+                for (int i = lowestCol; i <= highestCol; i++) {
+                    if (tileArray.at(i).count() > highestRow) {
+                        for (int j = lowestRow; j <= highestRow; j++) {
+                            rTiles.append(tileArray.at(i).at(j));
+                        }
+                    }
                 }
             }
         }
     }
-
     return rTiles;
 
 }
@@ -943,14 +962,31 @@ int MapWindow::getRowAt(int y_pix) {
     bool accepted_flag = false;
     int rIndex = -1;
 
-    if (tileArray.count() > 0) {
-        for (int i = 0; i < tileArray.at(0).count() && !accepted_flag; i++) {
-            int upperBound = tileArray.at(0).at(i)->getBoundingBox().top();
-            int lowerBound = tileArray.at(0).at(i)->getBoundingBox().bottom();
 
-            if ((y_pix > upperBound) && (y_pix <= lowerBound)) {
-                rIndex = i;
+
+    if (tileArray.count() > 0) {
+
+        if (tileArray.at(0).count() > 0) {
+
+            if (tileArray.at(0).at(0)->getBoundingBox().top() > y_pix) {
                 accepted_flag = true;
+                rIndex = -1;
+            }
+
+
+            if (tileArray.at(0).last()->getBoundingBox().bottom() < y_pix) {
+                accepted_flag = true;
+                rIndex = -2;
+            }
+
+            for (int i = 0; i < tileArray.at(0).count() && !accepted_flag; i++) {
+                int upperBound = tileArray.at(0).at(i)->getBoundingBox().top();
+                int lowerBound = tileArray.at(0).at(i)->getBoundingBox().bottom();
+
+                if ((y_pix > upperBound) && (y_pix <= lowerBound)) {
+                    rIndex = i;
+                    accepted_flag = true;
+                }
             }
         }
     }
@@ -962,20 +998,85 @@ int MapWindow::getColAt(int x_pix) {
     bool accepted_flag = false;
     int rIndex = -1;
 
-    for (int i = 0; i < tileArray.count() && !accepted_flag; i++) {
-        if (!tileArray.at(i).isEmpty()) {
+    if (tileArray.count() > 0) {
 
-            int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
-            int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
+        if (tileArray.at(0).at(0)->getBoundingBox().left() > x_pix) {
+            accepted_flag = true;
+            rIndex = -1;
+        }
 
-            if ((x_pix > leftBound) && (x_pix <= rightBound)) {
-                rIndex = i;
-                accepted_flag = true;
+
+        if (tileArray.last().at(0)->getBoundingBox().right() < x_pix) {
+            accepted_flag = true;
+            rIndex = -2;
+        }
+
+        for (int i = 0; i < tileArray.count() && !accepted_flag; i++) {
+            if (!tileArray.at(i).isEmpty()) {
+
+                int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
+                int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
+
+                if ((x_pix > leftBound) && (x_pix <= rightBound)) {
+                    rIndex = i;
+                    accepted_flag = true;
+                }
             }
         }
     }
 
     return rIndex;
+}
+
+
+int MapWindow::getHighlightedNeighbors(int rowIndex, int columnIndex) {
+    int rPosition = NONE;
+
+    if (tileArray.count() > 0) {
+        if (tileArray.at(0).count() > 0) {
+
+            int rIndexLess = rowIndex - 1;
+            int cIndexLess = columnIndex - 1;
+
+            int rIndexMore = rowIndex + 1;
+            int cIndexMore = columnIndex + 1;
+
+            if (rIndexLess >= 0) {
+                rPosition = rPosition | (tileArray.at(columnIndex).at(rIndexLess)->isSelected()) ? (TOP) : (NONE);
+
+                if (cIndexLess >= 0) {
+                    rPosition = rPosition | ((tileArray.at(cIndexLess).at(rIndexLess)->isSelected()) ? (TOP_LEFT) : (NONE));
+                }
+                if (cIndexMore < tileArray.count()) {
+                    rPosition = rPosition | ((tileArray.at(cIndexMore).at(rIndexLess)->isSelected()) ? (TOP_RIGHT) : (NONE));
+                }
+            }
+
+            if (rIndexMore < tileArray.at(0).count()) {
+                rPosition = rPosition | ((tileArray.at(columnIndex).at(rIndexMore)->isSelected()) ? (BOT) : (NONE));
+
+                if (cIndexLess >= 0) {
+                    rPosition = rPosition | ((tileArray.at(cIndexLess).at(rIndexMore)->isSelected()) ? (BOT_LEFT) : (NONE));
+                }
+                if (cIndexMore < tileArray.count()) {
+                    rPosition = rPosition | ((tileArray.at(cIndexMore).at(rIndexMore)->isSelected()) ? (BOT_RIGHT) : (NONE));
+                }
+            }
+
+            if (cIndexLess >= 0) {
+                rPosition = rPosition | ((tileArray.at(cIndexLess).at(rowIndex)->isSelected()) ? (LEFT) : (NONE));
+            }
+
+
+            if (cIndexMore < tileArray.count()) {
+                rPosition = rPosition | ((tileArray.at(cIndexMore).at(rowIndex)->isSelected()) ? (RIGHT) : (NONE));
+            }
+
+        }
+    }
+
+    return rPosition;
+
 }
 
 void MapWindow::setDebugLine(int row, QString text) {
