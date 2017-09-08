@@ -2,6 +2,7 @@
 #define TILEIMAGE_H
 
 #include <QObject>
+#include <QPixmap>
 
 class TileImage : public QObject
 {
@@ -9,6 +10,7 @@ class TileImage : public QObject
 public:
     explicit TileImage(QObject *parent = 0);
 
+    QPixmap img;
 signals:
 
 public slots:

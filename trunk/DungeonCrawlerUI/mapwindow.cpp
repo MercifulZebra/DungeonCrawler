@@ -3,6 +3,7 @@
 #include "configaccessor.h"
 #include "logger.h"
 #include "tile.h"
+#include "tileset.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -53,6 +54,10 @@ bool MapWindow::initWindow(ConfigAccessor *accessor, logger::Logger *nLog) {
     log = nLog;
 
     setMouseTracking(true);
+
+    TileSet testSet(log, "resources/default", this);
+    //testSet.readIndex("resources/TestIndex/TestIndex.txt");
+    testSet.readIndex("../DungeonCrawlerUI/resources/TestIndex/TestIndex.txt");
 
     //Set Up Tiles
     changeSize(12, 12, true);

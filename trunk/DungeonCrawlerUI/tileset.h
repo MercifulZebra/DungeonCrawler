@@ -16,10 +16,15 @@ class TileSet : public QObject
 public:
     explicit TileSet(logger::Logger *nLog, QString defaultIndex_path, QObject *parent = 0);
 
-    bool loadTileSet(QString nIndex);
+    bool readIndex(QString nIndex);
+    bool loadTileSet();
+
+    void addPixmap(QVector<QPixmap> target, QStringList files);
 
 private:
     logger::Logger *log;
+
+    QString index_filename;
 
     QString index_path;
     QString default_path;
