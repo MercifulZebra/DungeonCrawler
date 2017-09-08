@@ -20,6 +20,8 @@ namespace logger {
 //Straight Tunnel
 //Corner Tunnel
 
+namespace tile {
+
 enum NeighborPosition {
     NONE        = 0x00,
     TOP         = 0x01,
@@ -31,6 +33,25 @@ enum NeighborPosition {
     LEFT        = 0x40,
     TOP_LEFT    = 0x80
 };
+
+
+enum TileTypes {
+    INVALID         = 0,
+    FLOOR           = 1,
+    FILL            = 2,
+    WALL            = 3,
+    OUTSIDE_CORNER  = 4,
+    OPPOSITE_WALL   = 5,
+    PENINSULA       = 6,
+    ISLAND          = 7,
+    INSIDE_CORNERS  = 8,
+    INSIDE_CORNERDA = 9,
+    INSIDE_CORNERDO = 10,
+    INSIDE_CORNERT  = 11,
+    INSIDE_CORNERQ  = 12
+};
+
+}
 
 class QPainter;
 
@@ -46,8 +67,24 @@ public:
     bool init(logger::Logger *nLog);
 
     void paintThis(QPainter *painter, int hNeighbors);
+    void paintTileImg(QPainter *painter);
+
+
+    void paintInvalid(QPainter *painter);
+    void paintFill(QPainter *painter);
+    void paintFloor(QPainter *painter);
+    void paintWall(QPainter *painter, QVector<QPixmap> pixmap);
+
+    void updateTile(bool isFloor_flag, int fNeighbors);
+    void lightUpdateTile(int fNeighbors);
+    void updateDirectZero(int fNeighbors);
+    void updateDirectSingle(int fNeighbors);
+    void updateDirectDouble(int fNeighbors, int dNeighbors);
+    void updateDirectTriple(int fNeighbors, int dNeighbors);
 
     //Access Functions
+    void setActiveTileSet(TileSet *nSet);
+
     bool contains(int x_pix, int y_pix);
 
     QRect getBoundingBox();
@@ -59,12 +96,18 @@ public:
     bool isHovered();
     bool isSelected();
 
+    bool isFloor();
+
+    int hammingWeight(int n);
 private:
 
     logger::Logger *log;
 
     TileSet        *activeSet;
-    TileImage      *activeImage;
+
+    tile::TileTypes activeType;
+    int             rotation_clockwise;
+    int             variant;
 
     QRect           boundingBox;
 

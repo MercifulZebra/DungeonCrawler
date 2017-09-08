@@ -10,6 +10,7 @@
 
 #include "tile.h"
 #include "tileindex.h"
+#include "tileset.h"
 #include "tooltypes.h"
 
 namespace logger {
@@ -31,7 +32,8 @@ enum Action {
     MoveAction,
     SelectBoxAction,
     SelectLocalAction,
-    PaintAction
+    PaintFloorAction,
+    PaintWallAction
 };
 
 class MapWindow : public QOpenGLWidget
@@ -62,7 +64,8 @@ public:
     void startSelectBoxAction(QMouseEvent *e);
     void startSelectLocalAction(QMouseEvent *e);
     void startMoveAction(QMouseEvent *e);
-    void startPaintAction(QMouseEvent *e);
+    void startPaintFloorAction(QMouseEvent *e);
+    void startPaintWallAction(QMouseEvent *e);
 
     void updateSelectBoxAction(QMouseEvent *e);
     void updateSelectLocalAction(QMouseEvent *e);
@@ -76,6 +79,8 @@ public:
 
     //Interaction Functions
     void setCurrentTool(ToolTypes type);
+
+    void setActiveTileSet(QString index_filename);
 
     //Painting Functions
     void paintEvent(QPaintEvent *e) override;
@@ -100,6 +105,9 @@ public:
     void clearSelectedTiles();
     QVector<Tile*> getTilesInArea(TileIndex startIndex, TileIndex endIndex);
 
+    //Paint Tile
+    void updateSelectedTile(TileIndex pIndex, bool isFloor_flag);
+
     // Coordinate Helper Functions
     void updateMaxOffsets();
     void updateTileLocations();
@@ -111,6 +119,7 @@ public:
     int getColAt(int x_pix);
 
     int getHighlightedNeighbors(int rowIndex, int columnIndex);
+    int getFloorNeighbors(int rowIndex, int columnIndex);
 
     // Debugging
     void setDebugLine(int row, QString text);
@@ -127,7 +136,8 @@ private:
     logger::Logger *log;
 
     QVector<QVector<Tile*>> tileArray;
-    QVector<Tile*>         tilePool;
+    QVector<Tile*>          tilePool;
+    TileSet                 *activeTileSet;
 
     QPoint lastMousePosition;
     TileIndex mousePressStartIndex;
@@ -142,6 +152,9 @@ private:
     //Select
     TileIndex prevStartSelectIndex;
     TileIndex prevEndSelectIndex;
+
+    //Paint
+    TileIndex prevPaintIndex;
 
 
     //Coordinate System

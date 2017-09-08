@@ -3,7 +3,7 @@
 ConfigAccessor::ConfigAccessor(QObject *parent) : QObject(parent),
     moveToolImage_string("resources/pointer.png"),
     selectToolImage_string("resources/select.png"),
-    paintToolImage_string("resources/paint.png")
+    paintToolImage_string("resources/pencil.png")
 {
 
 }
